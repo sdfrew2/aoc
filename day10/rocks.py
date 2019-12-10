@@ -1,5 +1,6 @@
 import math
 import functools
+import collections
 
 def parseRocks(fn):
     result = []
@@ -87,11 +88,14 @@ def main10b():
     sp = spcopy
     count = 0
     vaporized = []
+    q = collections.deque()
+    for d in directions:
+        q.append(sp[d])
     while len(vaporized) < 200:
-        for d in directions:
-            line = sp[d]
-            if len(line) > 0:
-                vaporized.append(line.pop())
+        line = q.popleft()
+        vaporized.append(line.pop())
+        if len(line) != 0:
+            q.append(line)
     print(vaporized[199])
 
 
