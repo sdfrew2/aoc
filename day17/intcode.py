@@ -134,7 +134,7 @@ class CamSystem:
         me.picture = collections.defaultdict(lambda: '.')
 
     def handleOutput(me, c):
-        print(chr(c), sep="", end="")
+        #print(chr(c), sep="", end="")
         if c == 10:
             me.y += 1
             me.x = 0
@@ -153,6 +153,10 @@ class CamSystem:
                 if found:
                     result.append(p)
         return result
+
+    def run(me):
+        while not me.machine.hasHalted():
+            me.machine.step()
 
     def findWalk(me):
         while not me.machine.hasHalted():
@@ -232,28 +236,25 @@ def main17b():
     cams = CamSystem(program)
     walk = "".join(list(cams.findWalk()))
     print(walk.replace("F", ""))
-    edit(encodeWalk(walk))
-    #print(substringStats(walk.replace("F", ""))))
-    return
+    print(len(encodeWalk(walk)))
     solver = Solver(walk)
     for res in solver.solve(0, [], "", 0):
-        print(res)
-    return
-    stats = substringStats(walk)
-    candidates = []
-    candidatePositions = collections.defaultdict(lambda: [])
-    candidatesByPos = {}
-    for (s, count) in stats.items():
-        e = encodeWalk(s)
-        if len(e) <= 20:
-            candidates.append(s)
-    candidates.sort(key=lambda s: -len(encodeWalk(s)))
-    for c in candidates:
-        for p in substringPositions(walk, c):
-            if not p in candidatesByPos:
-                candidatesByPos[p] = []
-            candidatesByPos[p].append(c)
-
+        break
+    inputArray = [res[0], *res[1], "n"]
+    inputData = chr(10).join(inputArray) + chr(10)
+    program[0] = 2
+    cams = CamSystem(program)
+    inputIter = (ord(c) for c in inputData)
+    cams.machine.input = inputIter.__next__
+    def outputter(x):
+        if x < 128:
+            print(chr(x), sep="", end="")
+        else:
+            print()
+            print(x)
+    cams.machine.output = outputter
+    cams.run()
+    
 # s
 # pos
 # macroTable
@@ -276,7 +277,7 @@ class Solver:
         me.cost = {}
         for (i, c) in enumerate(me.candidates):
             enc = encodeWalk(c)
-            if len(enc) > 12:
+            if True: # len(enc) > 12:
                 me.validMacros.add(i)
             me.cost[i] = len(enc)
             me.encoded[i] = enc
@@ -284,11 +285,11 @@ class Solver:
             for p in ps:
                 me.candidatesByPosition[p].append(i)
         me.exclusions = collections.defaultdict(lambda: set())
-        for (i, cs) in me.candidatesByPosition.items():
-            for j in range(len(cs)):
-                for k in range(j+1, len(cs)):
-                    me.exclusions[j].add(k)
-                    me.exclusions[k].add(j)
+        #for (i, cs) in me.candidatesByPosition.items():
+        #    for j in range(len(cs)):
+        #        for k in range(j+1, len(cs)):
+        #            me.exclusions[j].add(k)
+        #            me.exclusions[k].add(j)
         print("initialized")
 
     def solve(me, pos, macros, main, cost):
@@ -301,27 +302,32 @@ class Solver:
         lastMacro = -1
         if len(macros) > 0:
             lastMacro = macros[-1]
-        if len(macros) < 3 and lastMacro < len(me.candidates) - 1:
-            for c in me.candidatesByPosition[pos]:
-                if pos == 0:
-                    print("*")
-                if c in me.validMacros:
-                    if c > lastMacro and not any((c in me.exclusions[l]) for l in macros):
-                        for res in me.solve(pos + len(me.candidates[c]), macros + [c], main + "," + "ABC"[len(macros)], cost + 2):
-                            yield res
-        for c in me.candidatesByPosition[pos]:
-            if pos == 0:
-                print("*")
-            for (mi, m) in enumerate(macros):
-                if m == c:
-                    for res in me.solve(pos + len(me.candidates[m]), macros, main + "," + "ABC"[mi], cost + 2):
-                        yield res
-            for j in range(pos+1, len(me.walk)):
-                delta = me.walk[pos:j]
-                enc = encodeWalk(delta)
-                for res in me.solve(j, macros, main + "," + enc, cost + 1 + len(enc)):
+        for m in macros:
+            if m in me.candidatesByPosition[pos]:
+                addendum = "ABC"[macros.index(m)]
+                if main == "":
+                    main2 = addendum
+                    dc = 1
+                else:
+                    main2 = main + "," + addendum
+                    dc = 2
+                for res in me.solve(pos + len(me.candidates[m]), macros, main2, cost + dc):
                     yield res
-
+        if len(macros) < 3:
+            for c in me.candidatesByPosition[pos]:
+                if c in macros:
+                    continue
+                if c in me.validMacros:
+                    addendum = "ABC"[len(macros)]
+                    if main == "":
+                        main2 = addendum
+                        dc = 1
+                    else:
+                        main2 = main + "," + addendum
+                        dc = 2
+                    for res in me.solve(pos + len(me.candidates[c]), macros + [c], main2, cost + dc):
+                        yield res
+       
 
 def edit(base):
     var = 0
