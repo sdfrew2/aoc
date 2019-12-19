@@ -395,12 +395,20 @@ def edit(base):
             history.append(history[-1].replace(cmd, varname))
 
                 
-            
+PROGRAM = parseProgram("input.txt")
+def tractor(x, y):
+    machine = IntCode(PROGRAM)
+    inputList = [x, y]
+    machine.input = iter(inputList).__next__
+    o  = []
+    machine.output = o.append
+    while not machine.hasHalted():
+        machine.step()
+    return o[0]
             
 
 
 def main19():
-    program = parseProgram("input.txt")
     t = {}
     out = 0
     outputs = set()
@@ -412,15 +420,34 @@ def main19():
     for y in range(50):
         print()
         for x in range(50):
-            inputList = [x, y]
-            machine = IntCode(program)
-            machine.input = iter(inputList).__next__
-            machine.output = lambda c: print(".8"[c], sep="", end="")
-            while not machine.hasHalted():
-                machine.step()
-    print(out)
+            print(".8"[tractor(x,y)], sep="", end="")
 
-            
+def main19b():
+    l = 4
+    r = 4
+    y = 4
+    ls = [None, None, None, None, 4]
+    rs = [None, None, None, None, 4]
+    while True:
+        y += 1
+        l2 = ls[-1]
+        r2 = rs[-1]
+        while tractor(l2, y) == 0:
+            l2 += 1
+        while tractor(r2, y) == 0:
+            r2 += 1
+        while tractor(r2+1, y) == 1:
+            r2 += 1
+        ls.append(l2)
+        rs.append(r2)
+        if y > 120:
+            pl = ls[y - 99]
+            pr = rs[y - 99]
+            if pl <= l2 <= pr and pl <= (l2 + 99) <= pr and r2 - l2 + 1 >= 100:
+                print(l2 ,  y - 99)
+                return
+           
+        
 
 
-main19()
+main19b()
