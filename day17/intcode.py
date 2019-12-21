@@ -184,7 +184,36 @@ class CamSystem:
                     return
                 
 
-        
+
+def findWalkFromLines(lines):
+    picture = collections.defaultdict(lambda: ".")
+    for (y, line) in enumerate(lines):
+        for (x, c) in enumerate(line):
+            picture[(x, y)] = c
+    p = [(p, c) for (p, c) in picture.items() if c in "<>^v"][0][0]
+    d = (1, 0)
+    yield "R"
+    while True:
+        pn = (p[0] + d[0], p[1] + d[1])
+        c = picture[pn]
+        if c == '#':
+            p = pn
+            yield "F"
+        else:
+            dl = (d[1], -d[0])
+            dr = (-d[1], d[0])
+            foundDir = False
+            for (d2, l) in ((dl, "L"), (dr, "R")):
+                if picture[(p[0] + d2[0], p[1] + d2[1])] == '#':
+                    d = d2
+                    yield l
+                    foundDir = True
+                    break
+            if not foundDir:
+                return
+    
+
+    
 
 
 def main17():
@@ -254,6 +283,18 @@ def main17b():
             print(x)
     cams.machine.output = outputter
     cams.run()
+
+def main17c():
+    with open("hard.txt", "r") as fh:
+        lines = [line.strip() for line in fh]
+    print(lines)
+    walk ="".join(list(findWalkFromLines(lines)))
+    print(walk)
+    print(encodeWalk(walk))
+    solver = Solver(walk)
+    for res in solver.solve(0, [], "", 0):
+        print(res)
+                
     
 # s
 # pos
@@ -361,4 +402,4 @@ def edit(base):
 
 
 
-main17b()
+main17c()
